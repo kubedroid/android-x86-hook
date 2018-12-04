@@ -39,6 +39,7 @@ import (
 
 const baseBoardManufacturerAnnotation = "smbios.vm.kubevirt.io/baseBoardManufacturer"
 const videoModelAnnotation = "video.vm.kubevirt.io/model"
+const vgpuAnnotation = "video.vm.kubevirt.io/vgpu"
 const eglHeadlessAnnotation = "graphics.vm.kubevirt.io/eglHeadless"
 const qemuArgsAnnotation = "qemu.vm.kubevirt.io/args"
 const hookName = "android-x86"
@@ -126,6 +127,32 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 			Type: "egl-headless",
 		}
 		domainSpec.Devices.Graphics = append(domainSpec.Devices.Graphics, eglHeadlessGraphics)
+	}
+
+	if _, found := annotations[vgpuAnnotation]; !found {
+		log.Log.Infof("The '%s' attribute was not provided. Not configuring a vGPU", vgpuAnnotation)
+	} else {
+		log.Log.Infof("Configuring a vGPU")
+/*
+		hostDev := domainSchema.HostDevice {
+			// Mode: "subsystem",
+			Type: "mdev",
+			Managed: "no",
+			// Model: "vfio-pci",
+			Source: &domainSchema.HostDeviceSource {
+				Address: &domainSchema.Address {
+					// Uuid: ""
+				},
+			},
+			Address: &domainSchema.Address {
+				Type: "pci",
+				Domain: "0x0000",
+				Bus: "0x00",
+				Slot: "0x05",
+				Function: "0x0",
+			},
+		}
+		domainSpec.Devices.HostDevices = append(domainSpec.Devices.HostDevices, hostDev)*/
 	}
 
 	if qemuArgsString, found := annotations[qemuArgsAnnotation]; !found {
