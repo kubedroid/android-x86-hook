@@ -277,6 +277,12 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
+  branch = "v4.10.0"
+  name = "github.com/libvirt/libvirt-go-xml"
+  packages = ["."]
+  revision = "e0ae6c18e37fe4d1ca4cb65eb3bfb2971838fd95"
+
+[[projects]]
   name = "kubevirt.io/containerized-data-importer"
   packages = ["pkg/apis/datavolumecontroller","pkg/apis/datavolumecontroller/v1alpha1","pkg/apis/uploadcontroller","pkg/apis/uploadcontroller/v1alpha1","pkg/client/clientset/versioned","pkg/client/clientset/versioned/scheme","pkg/client/clientset/versioned/typed/datavolumecontroller/v1alpha1","pkg/client/clientset/versioned/typed/uploadcontroller/v1alpha1"]
   revision = "8d7a20b86c9a2ed8ac31e26aab50e362f0c84475"

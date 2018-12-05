@@ -34,7 +34,7 @@ import (
 	hooksInfo "kubevirt.io/kubevirt/pkg/hooks/info"
 	hooksV1alpha1 "kubevirt.io/kubevirt/pkg/hooks/v1alpha1"
 	"kubevirt.io/kubevirt/pkg/log"
-	domainSchema "kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/api"
+	domainSchema "github.com/libvirt/libvirt-go-xml"
 )
 
 const baseBoardManufacturerAnnotation = "smbios.vm.kubevirt.io/baseBoardManufacturer"
@@ -79,8 +79,8 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 	annotations := vmiSpec.GetAnnotations()
 
 	domainXML := params.GetDomainXML()
-	domainSpec := domainSchema.DomainSpec{}
-	err = xml.Unmarshal(domainXML, &domainSpec)
+	domain := domainSchema.Domain{}
+	err = xml.Unmarshal(domainXML, &domain)
 	if err != nil {
 		log.Log.Reason(err).Errorf("Failed to unmarshal given domain spec: %s", domainXML)
 		panic(err)
@@ -91,19 +91,22 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 	} else {
 		log.Log.Infof("Configuring the baseboard manufacturer to be '%s'", baseBoardManufacturer)
 		// Add a new /os/smbios node, with mode set to sysinfo
-		domainSpec.OS.SMBios = &domainSchema.SMBios{Mode: "sysinfo"}
+		domain.OS.SMBios = &domainSchema.DomainSMBios{Mode: "sysinfo"}
 
 		// Add an empty /sysinfo node if required
-		if domainSpec.SysInfo == nil {
-			domainSpec.SysInfo = &domainSchema.SysInfo{}
+		if domain.SysInfo == nil {
+			domain.SysInfo = &domainSchema.DomainSysInfo{}
 		}
 
 		// Populate the sysinfo node with the required values.
-		domainSpec.SysInfo.Type = "smbios"
-		domainSpec.SysInfo.BaseBoard = append(domainSpec.SysInfo.BaseBoard, domainSchema.Entry{
+		domain.SysInfo.Type = "smbios"
+		baseBoard := domainSchema.DomainSysInfoBaseBoard {}
+		baseBoard.Entry = append(baseBoard.Entry, domainSchema.DomainSysInfoEntry {
 			Name:  "manufacturer",
 			Value: baseBoardManufacturer,
-		})
+			})
+
+		domain.SysInfo.BaseBoard = append(domain.SysInfo.BaseBoard, baseBoard)
 	}
 
 	if videoModel, found := annotations[videoModelAnnotation]; !found {
@@ -111,11 +114,11 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 	} else {
 		log.Log.Infof("Configuring the video model to be '%s'", videoModel)
 
-		if len(domainSpec.Devices.Video) == 0 {
-			domainSpec.Devices.Video = append(domainSpec.Devices.Video, domainSchema.Video{})
+		if len(domain.Devices.Videos) == 0 {
+			domain.Devices.Videos = append(domain.Devices.Videos, domainSchema.DomainVideo{})
 		}
 
-		domainSpec.Devices.Video[0].Model.Type = videoModel
+		domain.Devices.Videos[0].Model.Type = videoModel
 	}
 
 	if _, found := annotations[eglHeadlessAnnotation]; !found {
@@ -123,10 +126,11 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 	} else {
 		log.Log.Infof("Configuring the egl headless graphics")
 
-		eglHeadlessGraphics := domainSchema.Graphics{
-			Type: "egl-headless",
+		eglHeadlessGraphics := domainSchema.DomainGraphic {
+			EGLHeadless: &domainSchema.DomainGraphicEGLHeadless{
+			},
 		}
-		domainSpec.Devices.Graphics = append(domainSpec.Devices.Graphics, eglHeadlessGraphics)
+		domain.Devices.Graphics = append(domain.Devices.Graphics, eglHeadlessGraphics)
 	}
 
 	if _, found := annotations[vgpuAnnotation]; !found {
@@ -165,19 +169,19 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 		if err != nil {
 			log.Log.Reason(err).Errorf("Failed to unmarshal qemu arguments: '%s'. Ignoring the qemu arguments.", qemuArgsString)
 		} else {
-			if domainSpec.QEMUCmd == nil {
-				domainSpec.QEMUCmd = &domainSchema.Commandline{}
+			if domain.QEMUCommandline == nil {
+				domain.QEMUCommandline = &domainSchema.DomainQEMUCommandline{}
 			}
 
 			for _, qemuArg := range qemuArgs {
 				log.Log.Infof("Adding the qemu argument '%s'", qemuArg)
 
-				domainSpec.QEMUCmd.QEMUArg = append(domainSpec.QEMUCmd.QEMUArg, domainSchema.Arg{qemuArg})
+				domain.QEMUCommandline.Args = append(domain.QEMUCommandline.Args, domainSchema.DomainQEMUCommandlineArg{ Value: qemuArg, })
 			}
 		}
 	}
 
-	newDomainXML, err := xml.Marshal(domainSpec)
+	newDomainXML, err := xml.Marshal(domain)
 	if err != nil {
 		log.Log.Reason(err).Errorf("Failed to marshal updated domain spec: %s", err.Error())
 		panic(err)
