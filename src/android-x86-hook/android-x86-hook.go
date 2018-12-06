@@ -147,6 +147,7 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 			Managed: "no",
 			SubsysMDev : &domainSchema.DomainHostdevSubsysMDev {
 				Model: "vfio-pci",
+				Display: "on",
 				Source: &domainSchema.DomainHostdevSubsysMDevSource {
 					Address: &domainSchema.DomainAddressMDev {
 						UUID: vgpu,
