@@ -7,11 +7,11 @@ RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/down
 
 # Restore the dependencies. As long as Gopkg.toml and Gopkg.lock remain stable,
 # this step can be cached
-COPY src/android-x86/hook/Gopkg.toml src/android-x86-hook/Gopkg.lock ./
+COPY src/android-x86-hook/Gopkg.toml src/android-x86-hook/Gopkg.lock ./
 RUN dep ensure -vendor-only
 
 # Build the entire project
-COPY src/*.go ./
+COPY src/android-x86-hook/*.go ./
 RUN go build
 
 FROM ubuntu:bionic

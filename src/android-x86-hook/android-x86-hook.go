@@ -133,30 +133,36 @@ func (s v1alpha1Server) OnDefineDomain(ctx context.Context, params *hooksV1alpha
 		domain.Devices.Graphics = append(domain.Devices.Graphics, eglHeadlessGraphics)
 	}
 
-	if _, found := annotations[vgpuAnnotation]; !found {
+	if vgpu, found := annotations[vgpuAnnotation]; !found {
 		log.Log.Infof("The '%s' attribute was not provided. Not configuring a vGPU", vgpuAnnotation)
 	} else {
-		log.Log.Infof("Configuring a vGPU")
-/*
-		hostDev := domainSchema.HostDevice {
-			// Mode: "subsystem",
-			Type: "mdev",
+		log.Log.Infof("Configuring a vGPU with UUID %s", vgpu)
+
+		pci_domain := uint(0x0000)
+		pci_bus := uint(0x00)
+		pci_slot := uint(0x05)
+		pci_function := uint(0x0)
+
+		hostDev := domainSchema.DomainHostdev {
 			Managed: "no",
-			// Model: "vfio-pci",
-			Source: &domainSchema.HostDeviceSource {
-				Address: &domainSchema.Address {
-					// Uuid: ""
+			SubsysMDev : &domainSchema.DomainHostdevSubsysMDev {
+				Model: "vfio-pci",
+				Source: &domainSchema.DomainHostdevSubsysMDevSource {
+					Address: &domainSchema.DomainAddressMDev {
+						UUID: vgpu,
+					},
 				},
 			},
-			Address: &domainSchema.Address {
-				Type: "pci",
-				Domain: "0x0000",
-				Bus: "0x00",
-				Slot: "0x05",
-				Function: "0x0",
+			Address: &domainSchema.DomainAddress {
+				PCI: &domainSchema.DomainAddressPCI {
+					Domain: &pci_domain,
+					Bus: &pci_bus,
+					Slot: &pci_slot,
+					Function: &pci_function,
+				},
 			},
 		}
-		domainSpec.Devices.HostDevices = append(domainSpec.Devices.HostDevices, hostDev)*/
+		domain.Devices.Hostdevs = append(domain.Devices.Hostdevs, hostDev)
 	}
 
 	if qemuArgsString, found := annotations[qemuArgsAnnotation]; !found {
